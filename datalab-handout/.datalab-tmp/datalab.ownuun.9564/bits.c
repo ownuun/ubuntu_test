@@ -76,8 +76,8 @@ int isLessOrEqual(int x, int y) {
 }
 #line 531
 int rotateRight(int x, int n) {
-  int mask=(  1 << n) + ~0;
-  int r_b=  x & mask;
+  int m=(  1 << n) + ~0;
+  int r_b=  x & m;
   int left_part=  x >> n;
   int shift_left=  32 + ~n + 1;
   int rotated_right=  r_b << shift_left;

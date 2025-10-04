@@ -632,31 +632,30 @@ exp가 양수라면 다시 exp를 1 증가시키고, 0xFF 이상으로 올라가
 int trueSevenSixteenths(int x)
 {
   int s = x >> 31;
-  int neg_s = ~s + 1;
-  int absx = (x ^ s) + neg_s;
-  int mask = (1 << 28) + ~0;
-  int base = (absx >> 4) & mask;
-  int base_part = base + (base << 1) + (base << 2);
-  int rem = absx & 0xF;
-  int rem_part = (rem + (rem << 1) + (rem << 2)) >> 4;
-  int magnitude = base_part + rem_part;
-  return (magnitude ^ s) + neg_s;
+  int n_s = ~s + 1;
+  int a = (x ^ s) + n_s;
+  int m = (1 << 28) + ~0;
+  int b = (a >> 4) & m;
+  int b_p = b + (b << 1) + (b << 2);
+  int r = a & 0xF;
+  int r_p = (r + (r << 1) + (r << 2)) >> 4;
+  int magnitude = b_p + r_p;
+  return (magnitude ^ s) + n_s;
 }
 /* 
 7/16은 4/16 + 2/16 + 1/16이니까 결국 세 번의 나눗셈 결과를 더하면 된다.
-다만 음수는 0 쪽으로 반올림해야 하므로 먼저 절댓값으로 계산하고 마지막에 부호를 복원한다.
+다만 음수는 0 쪽으로 반올림해야 하므로 먼저 절댓값으로 계산하고 마지막에 부호를 복원하려고 한다.
 
-s = x >> 31에서 부호를 뽑고, neg_s = ~s + 1을 써서 (s이 0이면 0, -1이면 1)이 되게 했다.
-absx = (x ^ s) + neg_s으로 절댓값을 구한다.
-
-absx를 16으로 나눌 때 상위로 전파되는 비트가 생기면 안 되므로 mask = (1 << 28) + ~0을 사용해서
-(base << 1)이나 (base << 2)를 해도 오버플로로 망가지지 않게 상위 네 비트를 미리 0으로 만든다.
-base = (absx >> 4) & mask로 16으로 나눈 몫을 구하고,
-base_part = base + (base << 1) + (base << 2)로 몫에 7을 곱한 값을 만든다.
-
-나머지 rem = absx & 0xF를 따로 계산해서
-rem_part = (rem + (rem << 1) + (rem << 2)) >> 4로 7/16을 반영했다.
-
-둘을 더한 magnitude가 절댓값 결과이고,
-마지막에 (magnitude ^ s) + neg_s을 해서 원래 부호를 붙여준다.
+s = x >> 31에서 부호를 뽑고, n_s = ~s + 1을 써서 (s이 0이면 0, -1이면 1)이 되게 했다.
+a = (x ^ s) + n_s으로 절댓값을 표현한것인데
+음수라면 s가 -1, n_s가 1이므로 x^s는 x의 비트가 반전이 되고, +n_s로 1을 더해서 a가 x의 부호가 바뀐 절댓값이 된다.
+양수라면 s가 0, n_s가 0이므로 a가 그대로 x가 된다.
+m은 최상위 비트를 제외한 나머지 비트를 1로 만든 것이다.
+b는 a를 16으로 나눈 몫을 구하고, 
+b_p는 b에 1+2+4를 더한 값으로 7을 곱한 효과를 만든 것이다.
+r은 a를 16으로 나눈 나머지부분을 남긴 것이고,
+r_p는 r에 1+2+4를 더한 값으로 7을 곱한 효과를 만든 것이다.
+그리고 마지막에 >>4를 해서 반올림을 나타낸다.
+그리고 둘을 더한 magnitude가 절댓값 결과이므로,
+마지막에 (magnitude ^ s) + n_s을 다시시해서 원래 부호를 붙여준다.
 */
