@@ -367,18 +367,16 @@ int dividePower2(int x, int n) {
   return bx >> n;
 }
 /* 
-일단 반올림을 고려한 수를 만든 이후에 시프트를 진행하고자 한다.
-우선은 x의 부호를 추출한다.
-그러기 위해서는 오른쪽으로 31번 시프르를 진행하여 부호 비트를 추출한다.
-그렇게 해서 부호비트가 0이면 양수고 1로만 채워져있으면 음수이다.
-그 다음 반올림을 고려한 수를 만들어보자
-1 << n을 하고 그 다음에 ~0(-1)을 더하면 n의 개수만큼 1이 이루어진 값에서 
--1을 더한 값이 된다.
-그렇게 하면 s는 0이면 양수고 1로만 채워져있으면 음수이고
-b는 0이면 양수고 1로만 채워져있으면 음수이다.
+양수는 그냥 오른쪽 시프트하면 2^n으로 나눈 것과 같지만,
+음수는 시프트할 때 버림 방향이 0에서 멀어지기 때문에 보정값(bias)이 필요하다.
 
-그 다음에 &를 씌워서 양수일 때는 0이 나오고 음수일 때는 bias가 나오게 한다.
-그 다음에 x에 바이어스를 추가하고 그 다음에 n비트만큼 오른쪽으로 시프트를 하면 된다.
+먼저 s = x >> 31로 부호를 읽어온다. 양수면 0, 음수면 -1이 된다.
+바이어스 후보 b는 (1 << n) - 1과 같으니 (1 << n) + ~0으로 만들었다.
+
+음수일 때만 bias를 더해야 하므로 s & b를 이용해 bias를 결정한다.
+양수면 0이 되고, 음수면 (2^n - 1)만큼 더해져서 0 쪽으로 반올림되는 효과가 난다.
+
+마지막으로 (x + bias) >> n을 수행하면 원하는 결과를 얻을 수 있다.
 */
 /* 
    * x를 2^n으로 나누는 함수 (0 방향으로 반올림)
@@ -476,48 +474,26 @@ result_sign_differs = x_s ^ diff_sign로 결과의 부호가 x와 다른지 확�
 int isLessOrEqual(int x, int y) {
   int x_s = x >> 31;
   int y_s = y >> 31;
-  int diff = x + (~y + 1);
+  int sign_diff = x_s ^ y_s;
+  int diff = y + (~x + 1);
   int diff_sign = diff >> 31;
-  int same_sign = !(x_s ^ y_s);
-  int x_neg_y_pos = x_s & (~y_s);
-  int x_pos_y_neg = (~x_s) & y_s;
-  return (same_sign & (~diff_sign)) | x_neg_y_pos | ((~x_pos_y_neg) & (~diff_sign));
+  int d_n = !(diff_sign & 1);ㄴㅇㄻㄴㄹ
+  return (sign_diff & (x_s & 1)) | ((!sign_diff) & d_n);
 }
 /* 
-일단 x <= y를 판단하려면 x - y를 계산해서 그 결과가 0 이하인지 확인하면 된다.
-그런데 단순히 x - y를 계산하면 오버플로우가 발생할 수 있으므로 경우를 나눠서 생각해야 한다.
+일단 부호가 다르면 x가 음수고 y가 양수인 상황만 따지면 된다.
+그래서 x_s과 y_s을 비교해서 다르면 sign_diff가 1이 된다.
+sign_diff가 1이면서 x_s의 최하위 비트가 1이면(x < 0, y >= 0) 무조건 x <= y이다.
 
-먼저 각 값의 부호 비트를 추출한다.
-x_s = x >> 31로 x의 부호 비트를 얻고
-y_s = y >> 31로 y의 부호 비트를 얻는다.
+부호가 같다면 이제 y - x가 음수인지 아닌지만 보면 된다.
+바로 빼면 안 되니까 2의 보수로 diff = y + (~x + 1)을 구한다.
+이때 diff_sign은 diff의 부호이고, 음수면 최상위 비트가 1이다.
 
-그 다음에 x - y를 계산한다.
-diff = x + (~y + 1)로 2의 보수를 이용해서 뺄셈을 한다.
-diff_sign = diff >> 31로 차이의 부호 비트를 얻는다.
+diff가 음수일 때만 diff_sign & 1이 1이 되므로
+d_n = !(diff_sign & 1)을 만들어서 diff >= 0이면 1이 나오게 했다.
 
-이제 경우를 나눠서 생각한다.
-
-첫 번째 경우는 x와 y의 부호가 같은 경우다.
-same_sign = !(x_s ^ y_s)로 부호가 같은지 확인한다.
-부호가 같으면 1이 나오고, 다르면 0이 나온다.
-부호가 같으면 오버플로우가 발생하지 않으므로 diff_sign만 확인하면 된다.
-diff_sign이 1이면 x - y가 음수 또는 0이므로 x <= y가 참이다.
-그런데 우리는 diff_sign이 0일 때(x > y)를 제외해야 하므로 ~diff_sign을 사용한다.
-
-두 번째 경우는 x가 음수이고 y가 양수인 경우다.
-x_neg_y_pos = x_s & (~y_s)로 확인한다.
-이 경우는 항상 x <= y가 참이므로 이것만으로도 1을 반환해야 한다.
-
-세 번째 경우는 x가 양수이고 y가 음수인 경우다.
-x_pos_y_neg = (~x_s) & y_s으로 확인한다.
-이 경우는 항상 x > y이므로 x <= y가 거짓이다.
-따라서 이 경우를 제외해야 하므로 ~x_pos_y_neg를 사용한다.
-
-마지막으로 이 세 가지 경우를 조합한다.
-(same_sign & (~diff_sign))은 부호가 같고 x - y가 양수인 경우를 의미하고
-x_neg_y_pos는 x가 음수이고 y가 양수인 경우를 의미하고
-((~x_pos_y_neg) & (~diff_sign))은 x가 양수이고 y가 음수가 아니면서 diff가 양수가 아닌 경우를 의미한다.
-이 세 가지를 or로 연결해서 하나라도 참이면 1을 반환한다.
+정리하면 sign_diff가 1이고 x가 음수면 바로 참,
+sign_diff가 0이면 d_n로 y - x가 음수인지 판단해서 결론을 낸다.
 */
 //-----------------------------------------------------------------------------
 /* 
@@ -529,39 +505,27 @@ x_neg_y_pos는 x가 음수이고 y가 양수인 경우를 의미하고
  *   Rating: 3 
  */
 int rotateRight(int x, int n) {
-  int mask = (1 << n) + ~0;
-  int r_b = x & mask;
-  int left_part = x >> n;
-  int shift_left = 32 + ~n + 1;
-  int rotated_right = r_b << shift_left;
-  return left_part | rotated_right;
+  int l_m = (1 << n) + ~0;
+  int r_b = x & l_m;
+  int shift = (32 + (~n + 1)) & 31;
+  int rotated_low = r_b << shift;
+  int logical_mask = ~(((1 << 31) >> n) << 1);
+  int right_part = (x >> n) & logical_mask;
+  return rotated_low | right_part;
 }
 /* 
-일단 오른쪽으로 회전시킨다는 것은 오른쪽 끝에서 밀려나는 비트들을 왼쪽 끝으로 가져온다는 의미다.
-그래서 두 부분으로 나눠서 생각해야 한다.
+오른쪽 회전은 하위 n비트를 떼어서 위쪽으로 붙이고, 나머지는 논리 시프트로 이동시키면 된다.
+우선 l_m = (1 << n) + ~0으로 하위 n비트만 1인 마스크를 만들고 r_b에 저장한다.
 
-첫 번째는 오른쪽 끝에서 밀려날 하위 n개 비트를 추출해야 한다.
-이를 위해서 마스크를 만들어야 한다.
-mask = (1 << n) + ~0으로 하위 n개 비트만 1인 마스크를 만든다.
-예를 들어 n = 4이면 (1 << 4) + ~0 = 16 - 1 = 15 = 0x0000000F가 된다.
+r_b를 왼쪽 끝으로 보내야 하니까 32-n만큼 이동해야 하는데,
+shift = (32 + (~n + 1)) & 31로 32-n을 계산하면서 0~31 범위를 유지했다.
+rotated_low = r_b << shift로 잘라낸 비트를 위쪽으로 옮긴다.
 
-그 다음에 이 마스크와 x를 and 연산해서 하위 n개 비트를 추출한다.
-r_b = x & mask로 오른쪽 끝에서 밀려날 비트들을 저장한다.
+왼쪽에 남은 비트들은 단순히 산술 시프트하면 부호비트가 채워지니 안 된다.
+그래서 logical_mask = ~(((1 << 31) >> n) << 1)로 오른쪽 이동 뒤에 남겨야 할 비트만 1인 마스크를 만들었다.
+right_part = (x >> n) & logical_mask로 산술 시프트 뒤에 남은 비트들을 깨끗하게 만들어준다.
 
-두 번째는 나머지 비트들을 오른쪽으로 n만큼 시프트해야 한다.
-left_part = x >> n으로 x를 오른쪽으로 n만큼 시프트한다.
-이렇게 하면 상위 (32-n)개 비트가 오른쪽으로 이동한다.
-
-세 번째는 추출한 하위 n개 비트를 왼쪽 끝으로 보내야 한다.
-이를 위해서는 (32-n)만큼 왼쪽으로 시프트해야 한다.
-shift_left = 32 + ~n + 1로 32 - n을 계산한다.
-이것은 2의 보수를 이용한 뺄셈이다.
-
-그 다음에 추출한 비트들을 왼쪽으로 시프트한다.
-rotated_right = r_b << shift_left로 하위 비트들을 상위로 이동시킨다.
-
-마지막으로 두 부분을 합친다.
-left_part | rotated_right로 오른쪽 시프트한 부분과 왼쪽으로 이동한 부분을 or 연산으로 결합한다.
+마지막으로 rotated_low | right_part로 두 조각을 합치면 오른쪽 회전이 완성된다.
 */
 //-----------------------------------------------------------------------------
 /*
@@ -573,42 +537,20 @@ left_part | rotated_right로 오른쪽 시프트한 부분과 왼쪽으로 이�
  *   Rating: 3
  */
 int isAsciiAlpha(int x) {
-  int upper_lower = x + ~0x40;
-  int upper_upper = 0x5a + ~x;
-  int lower_lower = x + ~0x60;
-  int lower_upper = 0x7a + ~x;
-  int is_upper = !((upper_lower >> 31) | (upper_upper >> 31));
-  int is_lower = !((lower_lower >> 31) | (lower_upper >> 31));
-  return is_upper | is_lower;
+  int upper = x & ~0x20;
+  int lower_cmp = upper + ~0x40;
+  int upper_cmp = 0x5A + (~upper + 1);
+  return !((lower_cmp >> 31) | (upper_cmp >> 31));
 }
 /* 
-일단 x가 알파벳 문자인지 확인하려면 두 가지 범위를 확인해야 한다.
-대문자 'A'부터 'Z'까지(0x41부터 0x5A까지)와 소문자 'a'부터 'z'까지(0x61부터 0x7A까지)다.
+대소문자 둘 다 처리하고 싶어서 먼저 x의 5번째 비트를 지웠다.
+ASCII에서 소문자는 대문자보다 0x20만큼 크니까 upper = x & ~0x20을 하면 무조건 대문자 범위로 맞춰진다.
 
-먼저 대문자 범위를 확인한다.
-upper_lower = x + ~0x40으로 x - 0x41을 계산한다.
-x가 0x41보다 크거나 같으면 이 값은 0 이상이 되고, 작으면 음수가 된다.
+그 상태에서 'A'(0x41) 이상인지, 'Z'(0x5A) 이하인지 두 번 비교하면 된다.
+lower_cmp = upper - 0x41을 2의 보수로 계산했고, upper_cmp = 0x5A - upper도 마찬가지다.
 
-upper_upper = 0x5a + ~x로 0x5A - x를 계산한다.
-x가 0x5A보다 작거나 같으면 이 값은 0 이상이 되고, 크면 음수가 된다.
-
-그 다음에 이 두 값의 부호 비트를 확인한다.
-(upper_lower >> 31)로 upper_lower의 부호 비트를 얻고
-(upper_upper >> 31)로 upper_upper의 부호 비트를 얻는다.
-둘 중 하나라도 음수면 or 연산으로 1이 나온다.
-
-is_upper = !((upper_lower >> 31) | (upper_upper >> 31))로 대문자 범위인지 확인한다.
-둘 다 양수면 0 | 0 = 0이 되고 !0 = 1이 된다.
-하나라도 음수면 1이 섞여있으므로 !1 = 0이 된다.
-
-이제 소문자 범위도 똑같은 방식으로 확인한다.
-lower_lower = x + ~0x60으로 x - 0x61을 계산하고
-lower_upper = 0x7a + ~x로 0x7A - x를 계산한다.
-
-is_lower = !((lower_lower >> 31) | (lower_upper >> 31))로 소문자 범위인지 확인한다.
-
-마지막으로 대문자 범위이거나 소문자 범위이면 알파벳이므로
-is_upper | is_lower로 둘 중 하나라도 참이면 1을 반환한다.
+둘 중 하나라도 음수가 나오면 범위를 벗어난 것이므로 부호 비트를 보고 판단한다.
+결국 두 부호 비트가 모두 0이어야만 알파벳이니까, or로 묶은 뒤 !를 씌워서 결과를 얻는다.
 */
 //-----------------------------------------------------------------------------
 /*
@@ -623,51 +565,29 @@ is_upper | is_lower로 둘 중 하나라도 참이면 1을 반환한다.
  *  Rating: 3
  */
 int satMul3(int x) {
-  int x2 = x + x;
-  int result = x2 + x;
-  int x2_sign = x2 >> 31;
-  int x_s = x >> 31;
-  int result_sign = result >> 31;
-  int overflow = (x2_sign ^ result_sign) & (~(x2_sign ^ x_s));
-  int tmax = ~(1 << 31);
+  int doubled = x + x;
+  int tripled = doubled + x;
+  int overflow_bits = (x ^ doubled) | (doubled ^ tripled);
+  int overfl_m = overflow_bits >> 31;
+  int sign = x >> 31;
   int tmin = 1 << 31;
-  int pos_overflow = overflow & (~x_s);
-  int neg_overflow = overflow & x_s;
-  return (pos_overflow & tmax) | (neg_overflow & tmin) | ((~overflow) & result);
+  int tmax = ~tmin;
+  int sat = (sign & tmin) | ((~sign) & tmax);
+  return (overfl_m & sat) | ((~overfl_m) & tripled);
 }
 /* 
-일단 x에 3을 곱해야 한다.
-곱셈은 사용할 수 없으므로 x + x + x로 계산한다.
-x2 = x + x로 2*x를 구하고
-result = x2 + x로 3*x를 구한다.
+3배는 결국 x + x + x이지만, 중간과 최종 덧셈에서 오버플로가 났는지 확인해야 한다.
+그래서 doubled = x + x, tripled = doubled + x로 계산하고
+(x ^ doubled) | (doubled ^ tripled)로 두 번의 연산 중 하나라도 부호가 바뀌었는지를 살핀다.
 
-그런데 이 과정에서 오버플로우가 발생할 수 있다.
-오버플로우가 발생하면 Tmin이나 Tmax로 값을 제한해야 한다.
+overflow_bits를 31만큼 오른쪽으로 밀면 overfl_m가 부호 확장으로 가득 차게 된다.
+0이면 정상이고, -1이면 오버플로가 있었다는 뜻이다.
 
-먼저 각각의 부호 비트를 추출한다.
-x2_sign = x2 >> 31로 2*x의 부호 비트를 얻고
-x_s = x >> 31로 x의 부호 비트를 얻고
-result_sign = result >> 31로 결과의 부호 비트를 얻는다.
+오버플로가 났다면 x의 부호에 맞춰 Tmin 혹은 Tmax로 포화시켜야 한다.
+sign = x >> 31로 원래 부호를 얻고, sat = (sign & Tmin) | (~sign & Tmax)로 적절한 끝값을 만든다.
 
-이제 오버플로우를 감지해야 한다.
-오버플로우는 x2와 x의 부호가 같은데 결과의 부호가 다를 때 발생한다.
-(x2_sign ^ result_sign)로 x2와 result의 부호가 다른지 확인하고
-~(x2_sign ^ x_s)로 x2와 x의 부호가 같은지 확인한다.
-이 둘을 and로 연결하면 overflow 여부를 알 수 있다.
-
-그 다음에 Tmax와 Tmin 값을 만든다.
-tmax = ~(1 << 31)로 0x7FFFFFFF를 만들고
-tmin = 1 << 31로 0x80000000을 만든다.
-
-이제 오버플로우가 양수에서 발생했는지 음수에서 발생했는지 확인한다.
-pos_overflow = overflow & (~x_s)로 양수 오버플로우를 확인하고
-neg_overflow = overflow & x_s으로 음수 오버플로우를 확인한다.
-
-마지막으로 결과를 조합한다.
-양수 오버플로우면 tmax를 반환하고
-음수 오버플로우면 tmin을 반환하고
-오버플로우가 없으면 result를 반환한다.
-(pos_overflow & tmax) | (neg_overflow & tmin) | ((~overflow) & result)로 세 가지 경우를 or로 연결한다.
+마지막으로 overfl_m가 -1이면 sat를, 0이면 tripled를 선택하도록
+(overfl_m & sat) | ((~overfl_m) & tripled)로 결과를 조립했다.
 */
 //-----------------------------------------------------------------------------
 /* 
@@ -685,56 +605,57 @@ unsigned floatScale4(unsigned uf) {
   unsigned sign = uf & 0x80000000;
   unsigned exp = (uf >> 23) & 0xFF;
   unsigned frac = uf & 0x7FFFFF;
-  
+
   if (exp == 0xFF) {
     return uf;
   }
-  
+
   if (exp == 0) {
-    frac = frac << 2;
+    frac <<= 1;
     if (frac & 0x800000) {
       exp = 1;
-      frac = frac & 0x7FFFFF;
+      frac &= 0x7FFFFF;
     }
   } else {
-    exp = exp + 2;
-    if (exp >= 0xFF) {
-      exp = 0xFF;
-      frac = 0;
+    exp += 1;
+    if (exp == 0xFF) {
+      return sign | (0xFF << 23);
     }
   }
-  
+
+  if (exp == 0) {
+    frac <<= 1;
+    if (frac & 0x800000) {
+      exp = 1;
+      frac &= 0x7FFFFF;
+    }
+  } else {
+    exp += 1;
+    if (exp >= 0xFF) {
+      return sign | (0xFF << 23);
+    }
+  }
+
   return sign | (exp << 23) | frac;
 }
 /* 
-일단 부동소수점 수에 4를 곱해야 한다.
-부동소수점은 부호 비트, 지수 부분, 가수 부분으로 나뉜다.
+4배를 바로 하려면 한 번에 지수를 2만큼 올리거나, 정규/비정규 경계에서 가수를 조정해야 한다.
+그래서 2배를 두 번 하는 방식으로 나눠서 생각했다.
 
-먼저 각 부분을 추출한다.
-sign = uf & 0x80000000으로 부호 비트를 추출하고
-exp = (uf >> 23) & 0xFF로 지수 부분(8비트)을 추출하고
-frac = uf & 0x7FFFFF로 가수 부분(23비트)을 추출한다.
+먼저 sign, exp, frac을 각각 분리하고 exp가 0xFF면 그대로 반환한다.
 
-그 다음에 특수한 경우를 처리한다.
-exp == 0xFF면 NaN이거나 무한대이므로 그대로 반환한다.
+첫 번째 2배 단계:
+exp가 0이면(비정규 수면) frac을 한 칸 왼쪽으로 밀어서 값만 키운다.
+이때 24번째 비트가 생기면 exp를 1로 올리고 frac에서 해당 비트를 지워서 정규 수 상태를 만든다.
 
-이제 일반적인 경우를 처리한다.
-exp == 0이면 비정규화된 수다.
-비정규화된 수는 가수 부분만 왼쪽으로 2칸 시프트해서 4배를 만든다.
-frac = frac << 2로 가수를 4배로 만든다.
-그런데 이렇게 하면 가수가 23비트를 넘어갈 수 있다.
-frac & 0x800000로 24번째 비트가 1인지 확인한다.
-1이면 정규화된 수로 바뀌어야 하므로 exp = 1로 설정하고
-frac = frac & 0x7FFFFF로 24번째 비트를 제거한다.
+exp가 0이 아니라면 지수를 1만큼 올리면 2배가 된다.
+올렸더니 곧바로 0xFF에 도달하면 이미 무한대가 되었으므로 sign | (0xFF << 23)을 반환한다.
 
-exp가 0이 아니면 정규화된 수다.
-정규화된 수는 지수에 2를 더해서 4배를 만든다.
-exp = exp + 2로 지수를 2 증가시킨다.
-그런데 이렇게 하면 지수가 0xFF 이상이 될 수 있다.
-exp >= 0xFF면 무한대가 되므로 exp = 0xFF로 설정하고 frac = 0으로 만든다.
+두 번째 2배 단계도 동일한 과정을 반복한다.
+여전히 exp가 0이면 frac을 한 번 더 올리고, 정규화되는 순간 exp=1로 설정한다.
+exp가 양수라면 다시 exp를 1 증가시키고, 0xFF 이상으로 올라가면 바로 무한대로 포화시킨다.
 
-마지막으로 부호, 지수, 가수를 다시 조합한다.
-sign | (exp << 23) | frac로 세 부분을 or 연산으로 결합한다.
+두 단계를 모두 통과했다면 마지막으로 sign | (exp << 23) | frac으로 4배 결과를 만들어낸다.
 */
 //-----------------------------------------------------------------------------
 /*
@@ -749,37 +670,32 @@ sign | (exp << 23) | frac로 세 부분을 or 연산으로 결합한다.
  */
 int trueSevenSixteenths(int x)
 {
-  int sign_bit = x >> 31;
-  int abs_x = (x ^ sign_bit) + ~sign_bit + 1;
-  int result = (abs_x >> 1) + (abs_x >> 2) + (abs_x >> 4);
-  result = (result ^ sign_bit) + ~sign_bit + 1;
-  return result;
+  int sign = x >> 31;
+  int neg_sign = ~sign + 1;
+  int absx = (x ^ sign) + neg_sign;
+  int mask = (1 << 28) + ~0;
+  int base = (absx >> 4) & mask;
+  int base_part = base + (base << 1) + (base << 2);
+  int rem = absx & 0xF;
+  int rem_part = (rem + (rem << 1) + (rem << 2)) >> 4;
+  int magnitude = base_part + rem_part;
+  return (magnitude ^ sign) + neg_sign;
 }
 /* 
-일단 x에 7/16을 곱해야 한다.
-7/16 = 1/2 + 1/4 + 1/16이므로 (x >> 1) + (x >> 2) + (x >> 4)로 계산할 수 있다.
+7/16은 4/16 + 2/16 + 1/16이니까 결국 세 번의 나눗셈 결과를 더하면 된다.
+다만 음수는 0 쪽으로 반올림해야 하므로 먼저 절댓값으로 계산하고 마지막에 부호를 복원한다.
 
-그런데 음수의 경우 오른쪽 시프트를 하면 반올림 방향이 0이 아니라 음의 무한대 방향이 된다.
-따라서 0 방향으로 반올림하려면 절댓값으로 계산한 다음 부호를 다시 붙여야 한다.
+sign = x >> 31에서 부호를 뽑고, neg_sign = ~sign + 1을 써서 (sign이 0이면 0, -1이면 1)이 되게 했다.
+absx = (x ^ sign) + neg_sign으로 절댓값을 구한다.
 
-먼저 부호 비트를 추출한다.
-sign_bit = x >> 31로 x의 부호 비트를 얻는다.
-x가 양수면 0이 나오고, 음수면 -1(모든 비트가 1)이 나온다.
+absx를 16으로 나눌 때 상위로 전파되는 비트가 생기면 안 되므로 mask = (1 << 28) + ~0을 사용해서
+(base << 1)이나 (base << 2)를 해도 오버플로로 망가지지 않게 상위 네 비트를 미리 0으로 만든다.
+base = (absx >> 4) & mask로 16으로 나눈 몫을 구하고,
+base_part = base + (base << 1) + (base << 2)로 몫에 7을 곱한 값을 만든다.
 
-그 다음에 절댓값을 구한다.
-abs_x = (x ^ sign_bit) + ~sign_bit + 1로 x의 절댓값을 구한다.
-x가 양수면 x ^ 0 = x이고 ~0 + 1 = 0이므로 x + 0 = x가 된다.
-x가 음수면 x ^ -1은 비트 반전이고 ~(-1) + 1 = 1이므로 반전된 값에 1을 더하면 절댓값이 된다.
+나머지 rem = absx & 0xF를 따로 계산해서
+rem_part = (rem + (rem << 1) + (rem << 2)) >> 4로 7/16을 반영했다.
 
-이제 절댓값에 7/16을 곱한다.
-result = (abs_x >> 1) + (abs_x >> 2) + (abs_x >> 4)로 abs_x * (1/2 + 1/4 + 1/16)를 계산한다.
-abs_x >> 1은 abs_x / 2이고
-abs_x >> 2는 abs_x / 4이고
-abs_x >> 4는 abs_x / 16이므로
-이를 모두 더하면 abs_x * 7/16이 된다.
-
-마지막으로 원래의 부호를 다시 붙인다.
-result = (result ^ sign_bit) + ~sign_bit + 1로 부호를 적용한다.
-result가 양수였고 원래 x도 양수였으면 그대로 양수로 유지되고
-result가 양수였고 원래 x가 음수였으면 음수로 변환된다.
+둘을 더한 magnitude가 절댓값 결과이고,
+마지막에 (magnitude ^ sign) + neg_sign을 해서 원래 부호를 붙여준다.
 */

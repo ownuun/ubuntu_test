@@ -56,31 +56,31 @@ int dividePower2(int x, int n) {
 #line 434
 int subtractionOK(int x, int y) {
   int diff=  x +( ~y + 1);
-  int x_sign=  x >> 31;
-  int y_sign=  y >> 31;
+  int x_s=  x >> 31;
+  int y_s=  y >> 31;
   int diff_sign=  diff >> 31;
-  int signs_differ=  x_sign ^ y_sign;
-  int result_sign_differs=  x_sign ^ diff_sign;
+  int signs_differ=  x_s ^ y_s;
+  int result_sign_differs=  x_s ^ diff_sign;
   return !(signs_differ & result_sign_differs);
 }
 #line 476
 int isLessOrEqual(int x, int y) {
-  int x_sign=  x >> 31;
-  int y_sign=  y >> 31;
+  int x_s=  x >> 31;
+  int y_s=  y >> 31;
   int diff=  x +( ~y + 1);
   int diff_sign=  diff >> 31;
-  int same_sign=  !(x_sign ^ y_sign);
-  int x_neg_y_pos=  x_sign &( ~y_sign);
-  int x_pos_y_neg=(  ~x_sign) & y_sign;
+  int same_sign=  !(x_s ^ y_s);
+  int x_neg_y_pos=  x_s &( ~y_s);
+  int x_pos_y_neg=(  ~x_s) & y_s;
   return (same_sign &( ~diff_sign)) | x_neg_y_pos |(( ~x_pos_y_neg) &( ~diff_sign));
 }
 #line 531
 int rotateRight(int x, int n) {
   int mask=(  1 << n) + ~0;
-  int right_bits=  x & mask;
+  int r_b=  x & mask;
   int left_part=  x >> n;
   int shift_left=  32 + ~n + 1;
-  int rotated_right=  right_bits << shift_left;
+  int rotated_right=  r_b << shift_left;
   return left_part | rotated_right;
 }
 #line 575
@@ -98,13 +98,13 @@ int satMul3(int x) {
   int x2=  x + x;
   int result=  x2 + x;
   int x2_sign=  x2 >> 31;
-  int x_sign=  x >> 31;
+  int x_s=  x >> 31;
   int result_sign=  result >> 31;
-  int overflow=(  x2_sign ^ result_sign) &( ~(x2_sign ^ x_sign));
+  int overflow=(  x2_sign ^ result_sign) &( ~(x2_sign ^ x_s));
   int tmax=  ~(1 << 31);
   int tmin=  1 << 31;
-  int pos_overflow=  overflow &( ~x_sign);
-  int neg_overflow=  overflow & x_sign;
+  int pos_overflow=  overflow &( ~x_s);
+  int neg_overflow=  overflow & x_s;
   return (pos_overflow & tmax) |( neg_overflow & tmin) |(( ~overflow) & result);
 }
 #line 684

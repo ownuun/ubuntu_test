@@ -250,11 +250,11 @@ int dividePower2(int x, int n) {
 int subtractionOK(int x, int y) {
   /* Check if x - y can be computed without overflow */
   int diff = x + (~y + 1);  /* x - y */
-  int x_sign = x >> 31;
-  int y_sign = y >> 31;
+  int x_s = x >> 31;
+  int y_s = y >> 31;
   int diff_sign = diff >> 31;
-  int signs_differ = x_sign ^ y_sign;
-  int result_sign_differs = x_sign ^ diff_sign;
+  int signs_differ = x_s ^ y_s;
+  int result_sign_differs = x_s ^ diff_sign;
   return !(signs_differ & result_sign_differs);
 }
 ```
@@ -268,15 +268,15 @@ int subtractionOK(int x, int y) {
 int isLessOrEqual(int x, int y) {
   /* Return 1 if x <= y, 0 otherwise */
   int diff = y + (~x + 1);  /* y - x */
-  int x_sign = x >> 31;
-  int y_sign = y >> 31;
-  int sign_diff = x_sign ^ y_sign;
+  int x_s = x >> 31;
+  int y_s = y >> 31;
+  int sign_diff = x_s ^ y_s;
   int diff_sign = diff >> 31;
   int same_sign = !sign_diff;
-  int diff_nonneg = !diff_sign;
-  int x_neg_y_pos = x_sign & (~y_sign);
+  int d_n = !diff_sign;
+  int x_neg_y_pos = x_s & (~y_s);
   int x_neg_y_pos_bool = !(!x_neg_y_pos);
-  return x_neg_y_pos_bool | (same_sign & diff_nonneg);
+  return x_neg_y_pos_bool | (same_sign & d_n);
 }
 ```
 
@@ -323,12 +323,12 @@ int satMul3(int x) {
   int tripled = doubled + x;
   int overflow_bits = (x ^ doubled) | (x ^ tripled);
   int overflow = (overflow_bits >> 31) & 1;
-  int overflow_mask = ~overflow + 1;
+  int overfl_m = ~overflow + 1;
   int sign = x >> 31;
   int tmin = 1 << 31;
   int tmax = ~tmin;
   int saturated = (sign & tmin) | (~sign & tmax);
-  return (overflow_mask & saturated) | (~overflow_mask & tripled);
+  return (overfl_m & saturated) | (~overfl_m & tripled);
 }
 ```
 
