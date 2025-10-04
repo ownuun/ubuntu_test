@@ -33,7 +33,7 @@ int isSymmetric(int x) {
   return !(( x & k) ^(( x >> 16) & k));
 }
 #line 307
-int sign(int x) {
+int s(int x) {
   int s=  x >> 31;
   int z=  !x;
   return s |( !z & !s);
@@ -58,21 +58,21 @@ int subtractionOK(int x, int y) {
   int diff=  x +( ~y + 1);
   int x_s=  x >> 31;
   int y_s=  y >> 31;
-  int diff_sign=  diff >> 31;
-  int signs_differ=  x_s ^ y_s;
-  int result_sign_differs=  x_s ^ diff_sign;
-  return !(signs_differ & result_sign_differs);
+  int diff_s=  diff >> 31;
+  int ss_differ=  x_s ^ y_s;
+  int result_s_differs=  x_s ^ diff_s;
+  return !(ss_differ & result_s_differs);
 }
 #line 476
 int isLessOrEqual(int x, int y) {
   int x_s=  x >> 31;
   int y_s=  y >> 31;
   int diff=  x +( ~y + 1);
-  int diff_sign=  diff >> 31;
-  int same_sign=  !(x_s ^ y_s);
+  int diff_s=  diff >> 31;
+  int same_s=  !(x_s ^ y_s);
   int x_neg_y_pos=  x_s &( ~y_s);
   int x_pos_y_neg=(  ~x_s) & y_s;
-  return (same_sign &( ~diff_sign)) | x_neg_y_pos |(( ~x_pos_y_neg) &( ~diff_sign));
+  return (same_s &( ~diff_s)) | x_neg_y_pos |(( ~x_pos_y_neg) &( ~diff_s));
 }
 #line 531
 int rotateRight(int x, int n) {
@@ -97,10 +97,10 @@ int isAsciiAlpha(int x) {
 int satMul3(int x) {
   int x2=  x + x;
   int result=  x2 + x;
-  int x2_sign=  x2 >> 31;
+  int x2_s=  x2 >> 31;
   int x_s=  x >> 31;
-  int result_sign=  result >> 31;
-  int overflow=(  x2_sign ^ result_sign) &( ~(x2_sign ^ x_s));
+  int result_s=  result >> 31;
+  int overflow=(  x2_s ^ result_s) &( ~(x2_s ^ x_s));
   int tmax=  ~(1 << 31);
   int tmin=  1 << 31;
   int pos_overflow=  overflow &( ~x_s);
@@ -109,7 +109,7 @@ int satMul3(int x) {
 }
 #line 684
 unsigned floatScale4(unsigned uf) {
-  unsigned sign=  uf & 0x80000000;
+  unsigned s=  uf & 0x80000000;
   unsigned exp=(  uf >> 23) & 0xFF;
   unsigned frac=  uf & 0x7FFFFF;
 
@@ -131,14 +131,14 @@ unsigned floatScale4(unsigned uf) {
     }
   }
 
-  return sign |( exp << 23) | frac;
+  return s |( exp << 23) | frac;
 }
 #line 750
 int trueSevenSixteenths(int x)
 {
-  int sign_bit=  x >> 31;
-  int abs_x=(  x ^ sign_bit) + ~sign_bit + 1;
+  int s_bit=  x >> 31;
+  int abs_x=(  x ^ s_bit) + ~s_bit + 1;
   int result=(  abs_x >> 1) +( abs_x >> 2) +( abs_x >> 4);
-  result =( result ^ sign_bit) + ~sign_bit + 1;
+  result =( result ^ s_bit) + ~s_bit + 1;
   return result;
 }

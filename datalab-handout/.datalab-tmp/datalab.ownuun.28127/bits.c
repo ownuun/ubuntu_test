@@ -113,7 +113,7 @@ NOTES:
   2. Each function has a maximum number of operations (integer, logical,
      or comparison) that you are allowed to use for your implementation
      of the function.  The max operator count is checked by dlc.
-     Note that assignment ('=') is not counted; you may use as many of
+     Note that assment ('=') is not counted; you may use as many of
      these as you want without penalty.
   3. Use the btest test harness to check your functions for correctness.
   4. Use the BDD checker to formally verify your functions
@@ -251,7 +251,7 @@ int isPositive(int x) {
 //-----------------------------------------------------------------------------
 /* 
  * getByte - Extract byte n from word x
- *   Bytes numbered from 0 (least significant) to 3 (most significant)
+ *   Bytes numbered from 0 (least sificant) to 3 (most sificant)
  *   Examples: getByte(0x12345678,1) = 0x56
  *   Legal ops: ! ~ & ^ | + << >>
  *   Max ops: 6
@@ -297,14 +297,14 @@ x와 &를 씌우고 우선 오른쪽 16비트중에서 1인 것들만 남긴다.
 */
 //-----------------------------------------------------------------------------
 /* 
- * sign - return 1 if positive, 0 if zero, and -1 if negative
- *  Examples: sign(130) = 1
- *            sign(-23) = -1
+ * s - return 1 if positive, 0 if zero, and -1 if negative
+ *  Examples: s(130) = 1
+ *            s(-23) = -1
  *  Legal ops: ! ~ & ^ | + << >>
  *  Max ops: 10
  *  Rating: 2
  */
-int sign(int x) {
+int s(int x) {
   int s = x >> 31; 
   int z = !x; 
   return s | (!z & !s); 
@@ -326,7 +326,7 @@ int sign(int x) {
 //-----------------------------------------------------------------------------
 /* 
  * allEvenBits - return 1 if all even-numbered bits in word set to 1
- *   where bits are numbered from 0 (least significant) to 31 (most significant)
+ *   where bits are numbered from 0 (least sificant) to 31 (most sificant)
  *   Examples allEvenBits(0xFFFFFFFE) = 0, allEvenBits(0x55555555) = 1
  *   Legal ops: ! ~ & ^ | + << >>
  *   Max ops: 12
@@ -395,27 +395,27 @@ int dividePower2(int x, int n) {
    *    - n=2일 때: (1 << 2) - 1 = 4 - 1 = 3
    *    - n=4일 때: (1 << 4) - 1 = 16 - 1 = 15
    * 
-   * 2. 바이어스 추가 조건: sign_bit & bias
-   *    - 양수일 때: sign_bit = 0 → 0 & bias = 0 (바이어스 추가 안함)
-   *    - 음수일 때: sign_bit = -1 → (-1) & bias = bias (바이어스 추가)
+   * 2. 바이어스 추가 조건: s_bit & bias
+   *    - 양수일 때: s_bit = 0 → 0 & bias = 0 (바이어스 추가 안함)
+   *    - 음수일 때: s_bit = -1 → (-1) & bias = bias (바이어스 추가)
    * 
    * 3. 최종 계산: (x + bias) >> n
    * 
    * 예시 분석:
    * a) dividePower2(15, 1): x=15, n=1
-   *    - sign_bit = 0 (양수)
+   *    - s_bit = 0 (양수)
    *    - bias = (1 << 1) - 1 = 1
    *    - biased_x = 15 + (0 & 1) = 15 + 0 = 15
    *    - 결과: 15 >> 1 = 7 ✓
    * 
    * b) dividePower2(-15, 1): x=-15, n=1  
-   *    - sign_bit = -1 (음수)
+   *    - s_bit = -1 (음수)
    *    - bias = (1 << 1) - 1 = 1
    *    - biased_x = -15 + ((-1) & 1) = -15 + 1 = -14
    *    - 결과: -14 >> 1 = -7 ✓
    * 
    * c) dividePower2(-33, 4): x=-33, n=4
-   *    - sign_bit = -1 (음수)
+   *    - s_bit = -1 (음수)
    *    - bias = (1 << 4) - 1 = 15
    *    - biased_x = -33 + ((-1) & 15) = -33 + 15 = -18
    *    - 결과: -18 >> 4 = -2 ✓
@@ -433,10 +433,10 @@ int subtractionOK(int x, int y) {
   int diff = x + (~y + 1);
   int x_s = x >> 31;
   int y_s = y >> 31;
-  int diff_sign = diff >> 31;
-  int signs_differ = x_s ^ y_s;
-  int result_sign_differs = x_s ^ diff_sign;
-  return !(signs_differ & result_sign_differs);
+  int diff_s = diff >> 31;
+  int ss_differ = x_s ^ y_s;
+  int result_s_differs = x_s ^ diff_s;
+  return !(ss_differ & result_s_differs);
 }
 /* 
 일단 x - y를 계산해야 한다.
@@ -446,19 +446,19 @@ x - y = x + (~y + 1) 이므로 diff = x + (~y + 1)로 계산한다.
 그 다음에 각각의 부호 비트를 추출한다.
 x_s = x >> 31로 x의 부호 비트를 얻고
 y_s = y >> 31로 y의 부호 비트를 얻고  
-diff_sign = diff >> 31로 결과의 부호 비트를 얻는다.
+diff_s = diff >> 31로 결과의 부호 비트를 얻는다.
 
 이제 오버플로우가 발생하는 조건을 확인해야 한다.
 오버플로우는 x와 y의 부호가 다르면서 결과의 부호가 x와 다를 때 발생한다.
 
-signs_differ = x_s ^ y_s로 x와 y의 부호가 다른지 확인한다.
+ss_differ = x_s ^ y_s로 x와 y의 부호가 다른지 확인한다.
 x와 y가 같은 부호면 0이 나오고, 다른 부호면 1이 나온다.
 
-result_sign_differs = x_s ^ diff_sign로 결과의 부호가 x와 다른지 확인한다.
+result_s_differs = x_s ^ diff_s로 결과의 부호가 x와 다른지 확인한다.
 결과가 x와 같은 부호면 0이 나오고, 다른 부호면 1이 나온다.
 
-오버플로우가 발생하는 경우는 signs_differ가 1이고 result_sign_differs도 1인 경우다.
-따라서 signs_differ & result_sign_differs로 오버플로우 여부를 확인한다.
+오버플로우가 발생하는 경우는 ss_differ가 1이고 result_s_differs도 1인 경우다.
+따라서 ss_differ & result_s_differs로 오버플로우 여부를 확인한다.
 오버플로우가 발생하면 1이 나오고, 발생하지 않으면 0이 나온다.
 
 마지막에 !를 씌워서 오버플로우가 없으면 1을 반환하고, 있으면 0을 반환하도록 한다.
@@ -474,26 +474,26 @@ result_sign_differs = x_s ^ diff_sign로 결과의 부호가 x와 다른지 확�
 int isLessOrEqual(int x, int y) {
   int x_s = x >> 31;
   int y_s = y >> 31;
-  int sign_diff = x_s ^ y_s;
+  int s_diff = x_s ^ y_s;
   int diff = y + (~x + 1);
-  int diff_sign = diff >> 31;
-  int d_n = !(diff_sign & 1);ㄴㅇㄻㄴㄹ
-  return (sign_diff & (x_s & 1)) | ((!sign_diff) & d_n);
+  int diff_s = diff >> 31;
+  int d_n = !(diff_s & 1);ㄴㅇㄻㄴㄹ
+  return (s_diff & (x_s & 1)) | ((!s_diff) & d_n);
 }
 /* 
 일단 부호가 다르면 x가 음수고 y가 양수인 상황만 따지면 된다.
-그래서 x_s과 y_s을 비교해서 다르면 sign_diff가 1이 된다.
-sign_diff가 1이면서 x_s의 최하위 비트가 1이면(x < 0, y >= 0) 무조건 x <= y이다.
+그래서 x_s과 y_s을 비교해서 다르면 s_diff가 1이 된다.
+s_diff가 1이면서 x_s의 최하위 비트가 1이면(x < 0, y >= 0) 무조건 x <= y이다.
 
 부호가 같다면 이제 y - x가 음수인지 아닌지만 보면 된다.
 바로 빼면 안 되니까 2의 보수로 diff = y + (~x + 1)을 구한다.
-이때 diff_sign은 diff의 부호이고, 음수면 최상위 비트가 1이다.
+이때 diff_s은 diff의 부호이고, 음수면 최상위 비트가 1이다.
 
-diff가 음수일 때만 diff_sign & 1이 1이 되므로
-d_n = !(diff_sign & 1)을 만들어서 diff >= 0이면 1이 나오게 했다.
+diff가 음수일 때만 diff_s & 1이 1이 되므로
+d_n = !(diff_s & 1)을 만들어서 diff >= 0이면 1이 나오게 했다.
 
-정리하면 sign_diff가 1이고 x가 음수면 바로 참,
-sign_diff가 0이면 d_n로 y - x가 음수인지 판단해서 결론을 낸다.
+정리하면 s_diff가 1이고 x가 음수면 바로 참,
+s_diff가 0이면 d_n로 y - x가 음수인지 판단해서 결론을 낸다.
 */
 //-----------------------------------------------------------------------------
 /* 
@@ -565,29 +565,29 @@ lower_cmp = upper - 0x41을 2의 보수로 계산했고, upper_cmp = 0x5A - uppe
  *  Rating: 3
  */
 int satMul3(int x) {
-  int doubled = x + x;
-  int tripled = doubled + x;
-  int overflow_bits = (x ^ doubled) | (doubled ^ tripled);
-  int overfl_m = overflow_bits >> 31;
-  int sign = x >> 31;
+  int d = x + x;
+  int t = d + x;
+  int o_b = (x ^ d) | (d ^ t);
+  int o_m = o_b >> 31;
+  int s = x >> 31;
   int tmin = 1 << 31;
   int tmax = ~tmin;
-  int sat = (sign & tmin) | ((~sign) & tmax);
-  return (overfl_m & sat) | ((~overfl_m) & tripled);
+  int sat = (s & tmin) | ((~s) & tmax);
+  return (o_m & sat) | ((~o_m) & t);
 }
 /* 
 3배는 결국 x + x + x이지만, 중간과 최종 덧셈에서 오버플로가 났는지 확인해야 한다.
-그래서 doubled = x + x, tripled = doubled + x로 계산하고
-(x ^ doubled) | (doubled ^ tripled)로 두 번의 연산 중 하나라도 부호가 바뀌었는지를 살핀다.
+그래서 d = x + x, t = d + x로 계산하고
+(x ^ d) | (d ^ t)로 두 번의 연산 중 하나라도 부호가 바뀌었는지를 살핀다.
 
-overflow_bits를 31만큼 오른쪽으로 밀면 overfl_m가 부호 확장으로 가득 차게 된다.
+o_b를 31만큼 오른쪽으로 밀면 o_m가 부호 확장으로 가득 차게 된다.
 0이면 정상이고, -1이면 오버플로가 있었다는 뜻이다.
 
 오버플로가 났다면 x의 부호에 맞춰 Tmin 혹은 Tmax로 포화시켜야 한다.
-sign = x >> 31로 원래 부호를 얻고, sat = (sign & Tmin) | (~sign & Tmax)로 적절한 끝값을 만든다.
+s = x >> 31로 원래 부호를 얻고, sat = (s & Tmin) | (~s & Tmax)로 적절한 끝값을 만든다.
 
-마지막으로 overfl_m가 -1이면 sat를, 0이면 tripled를 선택하도록
-(overfl_m & sat) | ((~overfl_m) & tripled)로 결과를 조립했다.
+마지막으로 o_m가 -1이면 sat를, 0이면 t를 선택하도록
+(o_m & sat) | ((~o_m) & t)로 결과를 조립했다.
 */
 //-----------------------------------------------------------------------------
 /* 
@@ -602,7 +602,7 @@ sign = x >> 31로 원래 부호를 얻고, sat = (sign & Tmin) | (~sign & Tmax)�
  *   Rating: 4
  */
 unsigned floatScale4(unsigned uf) {
-  unsigned sign = uf & 0x80000000;
+  unsigned s = uf & 0x80000000;
   unsigned exp = (uf >> 23) & 0xFF;
   unsigned frac = uf & 0x7FFFFF;
 
@@ -619,7 +619,7 @@ unsigned floatScale4(unsigned uf) {
   } else {
     exp += 1;
     if (exp == 0xFF) {
-      return sign | (0xFF << 23);
+      return s | (0xFF << 23);
     }
   }
 
@@ -632,30 +632,30 @@ unsigned floatScale4(unsigned uf) {
   } else {
     exp += 1;
     if (exp >= 0xFF) {
-      return sign | (0xFF << 23);
+      return s | (0xFF << 23);
     }
   }
 
-  return sign | (exp << 23) | frac;
+  return s | (exp << 23) | frac;
 }
 /* 
 4배를 바로 하려면 한 번에 지수를 2만큼 올리거나, 정규/비정규 경계에서 가수를 조정해야 한다.
 그래서 2배를 두 번 하는 방식으로 나눠서 생각했다.
 
-먼저 sign, exp, frac을 각각 분리하고 exp가 0xFF면 그대로 반환한다.
+먼저 s, exp, frac을 각각 분리하고 exp가 0xFF면 그대로 반환한다.
 
 첫 번째 2배 단계:
 exp가 0이면(비정규 수면) frac을 한 칸 왼쪽으로 밀어서 값만 키운다.
 이때 24번째 비트가 생기면 exp를 1로 올리고 frac에서 해당 비트를 지워서 정규 수 상태를 만든다.
 
 exp가 0이 아니라면 지수를 1만큼 올리면 2배가 된다.
-올렸더니 곧바로 0xFF에 도달하면 이미 무한대가 되었으므로 sign | (0xFF << 23)을 반환한다.
+올렸더니 곧바로 0xFF에 도달하면 이미 무한대가 되었으므로 s | (0xFF << 23)을 반환한다.
 
 두 번째 2배 단계도 동일한 과정을 반복한다.
 여전히 exp가 0이면 frac을 한 번 더 올리고, 정규화되는 순간 exp=1로 설정한다.
 exp가 양수라면 다시 exp를 1 증가시키고, 0xFF 이상으로 올라가면 바로 무한대로 포화시킨다.
 
-두 단계를 모두 통과했다면 마지막으로 sign | (exp << 23) | frac으로 4배 결과를 만들어낸다.
+두 단계를 모두 통과했다면 마지막으로 s | (exp << 23) | frac으로 4배 결과를 만들어낸다.
 */
 //-----------------------------------------------------------------------------
 /*
@@ -670,23 +670,23 @@ exp가 양수라면 다시 exp를 1 증가시키고, 0xFF 이상으로 올라가
  */
 int trueSevenSixteenths(int x)
 {
-  int sign = x >> 31;
-  int neg_sign = ~sign + 1;
-  int absx = (x ^ sign) + neg_sign;
+  int s = x >> 31;
+  int neg_s = ~s + 1;
+  int absx = (x ^ s) + neg_s;
   int mask = (1 << 28) + ~0;
   int base = (absx >> 4) & mask;
   int base_part = base + (base << 1) + (base << 2);
   int rem = absx & 0xF;
   int rem_part = (rem + (rem << 1) + (rem << 2)) >> 4;
   int magnitude = base_part + rem_part;
-  return (magnitude ^ sign) + neg_sign;
+  return (magnitude ^ s) + neg_s;
 }
 /* 
 7/16은 4/16 + 2/16 + 1/16이니까 결국 세 번의 나눗셈 결과를 더하면 된다.
 다만 음수는 0 쪽으로 반올림해야 하므로 먼저 절댓값으로 계산하고 마지막에 부호를 복원한다.
 
-sign = x >> 31에서 부호를 뽑고, neg_sign = ~sign + 1을 써서 (sign이 0이면 0, -1이면 1)이 되게 했다.
-absx = (x ^ sign) + neg_sign으로 절댓값을 구한다.
+s = x >> 31에서 부호를 뽑고, neg_s = ~s + 1을 써서 (s이 0이면 0, -1이면 1)이 되게 했다.
+absx = (x ^ s) + neg_s으로 절댓값을 구한다.
 
 absx를 16으로 나눌 때 상위로 전파되는 비트가 생기면 안 되므로 mask = (1 << 28) + ~0을 사용해서
 (base << 1)이나 (base << 2)를 해도 오버플로로 망가지지 않게 상위 네 비트를 미리 0으로 만든다.
@@ -697,5 +697,5 @@ base_part = base + (base << 1) + (base << 2)로 몫에 7을 곱한 값을 만든
 rem_part = (rem + (rem << 1) + (rem << 2)) >> 4로 7/16을 반영했다.
 
 둘을 더한 magnitude가 절댓값 결과이고,
-마지막에 (magnitude ^ sign) + neg_sign을 해서 원래 부호를 붙여준다.
+마지막에 (magnitude ^ s) + neg_s을 해서 원래 부호를 붙여준다.
 */
